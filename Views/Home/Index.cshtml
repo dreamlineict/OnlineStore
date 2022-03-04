@@ -1,0 +1,91 @@
+﻿@using PagedList;
+@using PagedList.Mvc;
+@model IPagedList<OnlineStoreDataAccess.models.productmodel>
+
+@{
+    ViewBag.Title = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";   
+
+}
+
+<div class="row">
+    <div class="col-sm-6"></div>
+    <div class="col-sm-6" style="text-align: right">
+        @if (Session["cart"] != null)
+        {
+            var items = (List<OnlineStoreDataAccess.models.productmodel>)Session["cart"];
+
+            if (items.Count() > 0)
+            {
+                <a href="@Url.Action("ViewOrder", "Home")" class="btn btn-info btn-sm">
+                    <span class="glyphicon glyphicon-shopping-cart"></span> @items.Count()
+                </a>
+            }
+        }
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+
+        @using (@Html.BeginForm("Index", "Home", FormMethod.Get))
+        {
+            <p>
+                @Html.TextBox("search") <input type="submit" id="txtsearch" value="Search" class="btn-outline-warning btn-warning" />
+            </p>
+        }
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>@Html.ActionLink("Sort By Product", "Index", new { sort = ViewBag.SortNameParameter, search = Request.QueryString["search"] })</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="col-md-3 col-sm-3 col-xs-6" style="margin-bottom:8px">
+                                <div class="thumbnail product-item" style="height:300px">
+
+                                    <img src='@Url.Action("GetVehicleImage", "Home", new { itemid = item.itemid })' class="img" />
+                                    <div class="caption">
+                                        <h5>@item.productname</h5>
+                                        <p>@string.Format("{0:C}", item.price)</p>
+                                        <p>
+                                            @if (item.quantity > 0)
+                                            {
+                                                using (Html.BeginForm("AddToCart", "Home", new { productId = item.itemid, url = "Index" }, FormMethod.Post))
+                                                {
+                                                    <label>Stock Quantity @item.quantity</label><br />
+                                                    <button type="submit" class="btn-success pull-right"><i class="glyphicon glyphicon-shopping-cart"></i>Add To Cart</button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                            <p>Not Available</p>
+                                        }
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+            </tbody>
+        </table>
+    </div>
+    <br />
+    <br />
+    <br />
+
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = Request.QueryString["search"], sort = Request["sort"] }),
+    new PagedListRenderOptions() { Display = PagedListDisplayMode.IfNeeded, DisplayPageCountAndCurrentLocation = true })
+
+    @if (!Model.Any())
+    {
+        <b>No rows match search criteria!</b>
+    }
+</div>

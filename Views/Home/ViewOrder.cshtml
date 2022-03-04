@@ -1,0 +1,70 @@
+﻿@using OnlineStoreDataAccess.models;
+@{
+    ViewBag.Title = "Order Items";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h3>Shopping Cart</h3>
+@if (Session["cart"] == null)
+{
+    <div class="alert alert-danger">
+        <strong>No product added to cart!</strong>
+    </div>
+
+}
+else
+{
+    if (((List<productmodel>)Session["cart"]).Count() < 1)
+    {
+        <div class="alert alert-danger">
+            <strong>No product added to cart!</strong>
+        </div>
+    }
+    else
+    {
+        <table class="table card-header">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Sub Total</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    decimal totalOrderAmount = 0;
+                }
+                @foreach (productmodel item in (List<productmodel>)Session["cart"])
+                {
+                    var linetot = item.quantity * item.price;
+                    totalOrderAmount += linetot;
+                    <tr>
+                        <td>@item.productname</td>
+                        <td>@item.quantity</td>
+                        <td>@string.Format("{0:C}", item.price)</td>
+                        <td>@string.Format("{0:C}", linetot)</td>
+                        <td>
+                            <a href="@Url.Action("RemoveFromCart", "Home", new { productId = item.itemid })" class="glyphicon glyphicon-minus-sign">
+                            </a>
+                        </td>
+                    </tr>
+                }
+                <tr style="font-weight: bold; color: deeppink">
+                    <td></td>
+                    <td></td>
+                    <td>Order Total:</td>
+                    <td>
+                        @string.Format("{0:C}", totalOrderAmount)
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    }
+    <a class="btn btn-success" href="@Url.Action("CheckoutOrder","Home")">Checkout >></a>
+    <a class="btn btn-info" href="@Url.Action("Index","Home")"><< Home</a>
+}
+
+
+
