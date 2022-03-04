@@ -1,0 +1,20 @@
+﻿//deployment notes:
+
+1. SQL Server
+ - restore the SQL database with the OnlineStoreUX project under a folder called "Database"...file name is "OnlineStore.bak"
+ - restore on a sql server not SQL Server Management Studio	15.0.18369.0 (v18.8)
+ - create a new sql user
+	- username: online_user 
+	- password: OnlineStore!123
+ - map the SQL user created above to the restored DB (OnlineStore)
+
+2. Restful API
+- deploy the api(OnlineStoreAPI) to ii6 or any environment caplable of hosting the restful api.
+- change the connection string on OnlineStoreEntities (web.config file)
+	- data source property SD-GODFREYSH-LT\MSSQLSERVER01 must be changed to your server name
+
+3. Web Front-End
+- change the below web.config settings:
+	- WebAPIurl: to your newly deployed api url from point no2
+	- smtpserver: to your smtp server settings
+ 
