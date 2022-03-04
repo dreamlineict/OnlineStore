@@ -1,0 +1,6 @@
+﻿//deployment notes:
+
+1. SQL Server
+ - deploy
+2. Restful API
+3. Web Front-End
