@@ -21,9 +21,11 @@ namespace OnlineStore.Controllers
     [Authorize]
     public class HomeController : Controller
     {
+        #region declarations
         private readonly string apiUrl = ConfigurationManager.AppSettings["WebAPIurl"].ToString();
         private readonly Utils utls = new Utils();
-        JwtAuthToken jwtAuthToken;
+        private JwtAuthToken jwtAuthToken;
+        #endregion
 
         private string GetToken()
         {
@@ -52,45 +54,53 @@ namespace OnlineStore.Controllers
 
         public async Task<ActionResult> Index(string search = "", int? page = 0, string sort = "")
         {
-            using (var client = new HttpClient())
+            try
             {
-                string api = ConfigurationManager.AppSettings["WebAPIurl"].ToString();
-
-                //get all products from api
-                client.BaseAddress = new Uri(@"" + api + @"api/products");
-                var httpContent = new HttpRequestMessage(HttpMethod.Get, @"?search=" + search);
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", GetToken());
-                
-                var response = client.SendAsync(httpContent).Result;
-                var contents = await response.Content.ReadAsStringAsync();
-                contents = contents.TrimStart('\"');
-                contents = contents.TrimEnd('\"');
-                contents = contents.Replace("\\", "");
-                var products = JsonConvert.DeserializeObject<List<productmodel>>(contents);
-                var productList = new OnlineStoreBusinessLogic.products.product
+                using (var client = new HttpClient())
                 {
-                    ListOfProducts = products
-                };
+                    string api = ConfigurationManager.AppSettings["WebAPIurl"].ToString();
 
-                ViewBag.SortNameParameter = string.IsNullOrEmpty(sort) ? "ProductName desc" : "";
+                    //get all products from api
+                    client.BaseAddress = new Uri(@"" + api + @"api/products");
+                    var httpContent = new HttpRequestMessage(HttpMethod.Get, @"?search=" + search);
 
-                List<productmodel> lstProducts = new List<productmodel>();
-                //sort products
-                switch (ViewBag.SortNameParameter)
-                {
-                    case "": 
-                        lstProducts = productList.ListOfProducts.OrderBy(x => x.productname).ToList(); 
-                        break;
-                    case "ProductName desc": 
-                        lstProducts = productList.ListOfProducts.OrderByDescending(x => x.productname).ToList();
-                        break;
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", GetToken());
+
+                    var response = client.SendAsync(httpContent).Result;
+                    var contents = await response.Content.ReadAsStringAsync();
+                    contents = contents.TrimStart('\"');
+                    contents = contents.TrimEnd('\"');
+                    contents = contents.Replace("\\", "");
+                    var products = JsonConvert.DeserializeObject<List<productmodel>>(contents);
+                    var productList = new OnlineStoreBusinessLogic.products.product
+                    {
+                        ListOfProducts = products
+                    };
+
+                    ViewBag.SortNameParameter = string.IsNullOrEmpty(sort) ? "ProductName desc" : "";
+
+                    List<productmodel> lstProducts = new List<productmodel>();
+                    //sort products
+                    switch (ViewBag.SortNameParameter)
+                    {
+                        case "":
+                            lstProducts = productList.ListOfProducts.OrderBy(x => x.productname).ToList();
+                            break;
+                        case "ProductName desc":
+                            lstProducts = productList.ListOfProducts.OrderByDescending(x => x.productname).ToList();
+                            break;
+                    }
+
+                    if (page > 0)
+                        return View(lstProducts.ToPagedList(page ?? 1, 4));
+                    else
+                        return View(lstProducts.ToPagedList(1, 4));
                 }
-
-                if (page > 0)
-                    return View(lstProducts.ToPagedList(page ?? 1, 4));
-                else
-                    return View(lstProducts.ToPagedList(1, 4));
+            }
+            catch(Exception ex)
+            {
+                utls.Log(ex.Message);
+                return View();
             }
         }
 
@@ -121,67 +131,75 @@ namespace OnlineStore.Controllers
 
                 return File(mybytearray, "image/jpg");
             }
-            catch
+            catch(Exception ex)
             {
+                utls.Log(ex.Message);
                 return File(new byte[0], "image/jpg");
             }
         }
 
         public ActionResult AddToCart(Guid productId, string url)
         {
-            //if cart is empty, add new order item to cart session
-            if (Session["cart"] == null)
+            try
             {
-                List<productmodel> cart = new List<productmodel>();
-                var product = GetProductById(productId).Result;
-                cart.Add(new productmodel()
+                //if cart is empty, add new order item to cart session
+                if (Session["cart"] == null)
                 {
-                    itemid = product.itemid,
-                    productname = product.productname,
-                    quantity = 1,
-                    price = product.price
-                });
-                Session["cart"] = cart;
-            }
-            else
-            {
-                List<productmodel> cart = (List<productmodel>)Session["cart"];
-                var count = cart.Count();
-                var product = GetProductById(productId).Result;
-                for (int i = 0; i < count; i++)
+                    List<productmodel> cart = new List<productmodel>();
+                    var product = GetProductById(productId).Result;
+                    cart.Add(new productmodel()
+                    {
+                        itemid = product.itemid,
+                        productname = product.productname,
+                        quantity = 1,
+                        price = product.price
+                    });
+                    Session["cart"] = cart;
+                }
+                else
                 {
-                    //if same item added to cart, increase quantity
-                    if (cart[i].itemid == productId)
+                    List<productmodel> cart = (List<productmodel>)Session["cart"];
+                    var count = cart.Count();
+                    var product = GetProductById(productId).Result;
+                    for (int i = 0; i < count; i++)
                     {
-                        int prevQty = cart[i].quantity;
-                        cart.Remove(cart[i]);
-                        cart.Add(new productmodel()
+                        //if same item added to cart, increase quantity
+                        if (cart[i].itemid == productId)
                         {
-                            itemid = product.itemid,
-                            productname = product.productname,
-                            quantity = prevQty + 1,
-                            price = product.price
-                        });
-                        break;
-                    }
-                    else
-                    {
-                        //add new cart item
-                        var prd = cart.Where(x => x.itemid == productId).SingleOrDefault();
-                        if (prd == null)
-                        {
+                            int prevQty = cart[i].quantity;
+                            cart.Remove(cart[i]);
                             cart.Add(new productmodel()
                             {
                                 itemid = product.itemid,
                                 productname = product.productname,
-                                quantity = 1,
+                                quantity = prevQty + 1,
                                 price = product.price
                             });
+                            break;
+                        }
+                        else
+                        {
+                            //add new cart item
+                            var prd = cart.Where(x => x.itemid == productId).SingleOrDefault();
+                            if (prd == null)
+                            {
+                                cart.Add(new productmodel()
+                                {
+                                    itemid = product.itemid,
+                                    productname = product.productname,
+                                    quantity = 1,
+                                    price = product.price
+                                });
+                            }
                         }
                     }
+                    //store cart item(s) in a session
+                    Session["cart"] = cart;
                 }
-                //store cart item(s) in a session
-                Session["cart"] = cart;
+            }
+            catch(Exception ex)
+            {
+                utls.Log(ex.Message);
             }
             return Redirect(url);
         }
@@ -193,17 +211,24 @@ namespace OnlineStore.Controllers
 
         public ActionResult RemoveFromCart(Guid productId)
         {
-            //remove cart item(s)
-            List<productmodel> cart = (List<productmodel>)Session["cart"];
-            foreach (var item in cart)
+            try
             {
-                if (item.itemid == productId)
+                //remove cart item(s)
+                List<productmodel> cart = (List<productmodel>)Session["cart"];
+                foreach (var item in cart)
                 {
-                    cart.Remove(item);
-                    break;
+                    if (item.itemid == productId)
+                    {
+                        cart.Remove(item);
+                        break;
+                    }
                 }
+                Session["cart"] = cart;
             }
-            Session["cart"] = cart;
+            catch(Exception ex)
+            {
+                utls.Log(ex.Message);
+            }
             return Redirect("ViewOrder");
         }
 
@@ -246,7 +271,7 @@ namespace OnlineStore.Controllers
                             //send email if order saved successfully!!!
                             byte[] bytes = GenerateOrderPdf(contents, orderItems).ToArray();
 
-                            utls.ProcessEmailAsync(new Email
+                            utls.ProcessEmail(new Email
                             {
                                 Attachment = new MemoryStream(bytes),
                                 Sender = "godfreys@liquidcapital.co.za",
@@ -265,15 +290,17 @@ namespace OnlineStore.Controllers
                         {
                             return View();
                         }
-
                     }
                 }
                 else
-                { return View(); }
+                { 
+                    return View(); 
+                }
             }
             catch(Exception ex)
             {
-                throw ex;
+                utls.Log(ex.Message);
+                return View();
             }
         }
 
@@ -313,6 +340,7 @@ namespace OnlineStore.Controllers
             }
             catch (Exception ex)
             {
+                utls.Log(ex.Message);
                 return null;
             }
         }
@@ -380,8 +408,9 @@ namespace OnlineStore.Controllers
                 }
                 return new MemoryStream();
             }
-            catch
+            catch(Exception ex)
             {
+                utls.Log(ex.Message);
                 return new MemoryStream();
             }
             finally { }

@@ -1,9 +1,13 @@
 ﻿using iTextSharp.text;
 using iTextSharp.text.pdf;
+using OnlineStore.APIAuth;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Security.Claims;
@@ -12,6 +16,8 @@ namespace OnlineStore
 {
     public class Utils
     {
+        private readonly string apiUrl = ConfigurationManager.AppSettings["WebAPIurl"].ToString();
+
         public Guid GetToken()
         {
             try
@@ -42,7 +48,19 @@ namespace OnlineStore
             }
         }
 
-        public bool ProcessEmailAsync(Email emailData)
+        public void Log(string msg)
+        {
+            using (var client = new HttpClient())
+            {
+                JwtAuth jwtAuth = new JwtAuth();
+                var jwtAuthToken = jwtAuth.JwtAuthToken().Result;
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtAuthToken.Token);
+                var httpContent = new HttpRequestMessage(HttpMethod.Post, @"" + apiUrl + "api/log?message=" + msg);
+                var response = client.SendAsync(httpContent).Result;
+            }
+        }
+
+        public bool ProcessEmail(Email emailData)
         {
             try
             {
@@ -50,9 +68,9 @@ namespace OnlineStore
 
                 MailMessage mMailMessage = new MailMessage
                 {
-                    From = new MailAddress("shongwegodfrey@gmail.com")
+                    From = new MailAddress(emailData.Sender)
                 };
-                mMailMessage.To.Add(new MailAddress("juliatshongwe@gmail.com"));
+                mMailMessage.To.Add(new MailAddress(emailData.Recipient));
                 mMailMessage.Subject = emailData.Subject;
                 mMailMessage.Body = emailData.EmailBody;
                 mMailMessage.IsBodyHtml = true;
@@ -65,16 +83,18 @@ namespace OnlineStore
                 reportAttachment.ContentDisposition.FileName = emailData.FileName + ".pdf";
                 mMailMessage.Attachments.Add(reportAttachment);
 
-                using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                using (SmtpClient client = new SmtpClient("smtp.mail.yahoo.com", 465))
                 {
                     //client.UseDefaultCredentials = false;
-                    client.Credentials = new NetworkCredential("shongwegodfrey@gmail.com", "Fashion@54321");
+                    client.DeliveryMethod = SmtpDeliveryMethod.Network;
+                    client.Credentials = new NetworkCredential("sandile.shongwe@yahoo.com", "Fashion@54321");
                     client.EnableSsl = true;
-                    //client.DeliveryMethod = SmtpDeliveryMethod.Network;
+                    
 
                     client.Send(mMailMessage);
                 }
-
                 return true;
             }
             catch (Exception ex)
