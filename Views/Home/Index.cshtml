@@ -61,12 +61,12 @@
                                                 using (Html.BeginForm("AddToCart", "Home", new { productId = item.itemid, url = "Index" }, FormMethod.Post))
                                                 {
                                                     <label>Stock Quantity @item.quantity</label><br />
-                                                    <button type="submit" class="btn-success pull-right"><i class="glyphicon glyphicon-shopping-cart"></i>Add To Cart</button>
+                                                    <button type="submit" title="Click on the button to add order item(s) to cart busket." class="btn-success pull-right"><i title="YAY!!!" cliass="glyphicon glyphicon-shopping-cart"></i>Add To Cart</button>
                                                 }
                                             }
                                             else
                                             {
-                                            <p>Not Available</p>
+<p>Not Available</p>
                                         }
                                         </div>
                                     </div>

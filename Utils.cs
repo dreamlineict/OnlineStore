@@ -48,13 +48,11 @@ namespace OnlineStore
             {
                 string smtpserver = ConfigurationManager.AppSettings["smtpserver"].ToString();
 
-                SmtpClient Smtp = new SmtpClient(smtpserver);
-
                 MailMessage mMailMessage = new MailMessage
                 {
-                    From = new MailAddress(emailData.Sender)
+                    From = new MailAddress("shongwegodfrey@gmail.com")
                 };
-                mMailMessage.To.Add(new MailAddress(emailData.Recipient));
+                mMailMessage.To.Add(new MailAddress("juliatshongwe@gmail.com"));
                 mMailMessage.Subject = emailData.Subject;
                 mMailMessage.Body = emailData.EmailBody;
                 mMailMessage.IsBodyHtml = true;
@@ -67,7 +65,16 @@ namespace OnlineStore
                 reportAttachment.ContentDisposition.FileName = emailData.FileName + ".pdf";
                 mMailMessage.Attachments.Add(reportAttachment);
 
-                Smtp.Send(mMailMessage);
+                using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
+                {
+                    //client.UseDefaultCredentials = false;
+                    client.Credentials = new NetworkCredential("shongwegodfrey@gmail.com", "Fashion@54321");
+                    client.EnableSsl = true;
+                    //client.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+                    client.Send(mMailMessage);
+                }
+
                 return true;
             }
             catch (Exception ex)
