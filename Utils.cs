@@ -99,6 +99,7 @@ namespace OnlineStore
             }
             catch (Exception ex)
             {
+                Log(string.Concat("ProcessEmail ", ex.Message));
                 return false;
             }
         }

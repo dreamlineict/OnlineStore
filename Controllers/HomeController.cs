@@ -99,7 +99,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("Index" + ex.Message);
                 return View();
             }
         }
@@ -133,7 +133,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("GetVehicleImage" + ex.Message);
                 return File(new byte[0], "image/jpg");
             }
         }
@@ -199,7 +199,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("AddToCart" + ex.Message);
             }
             return Redirect(url);
         }
@@ -227,7 +227,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("RemoveFromCart" + ex.Message);
             }
             return Redirect("ViewOrder");
         }
@@ -299,7 +299,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("CheckoutOrder" + ex.Message);
                 return View();
             }
         }
@@ -340,7 +340,7 @@ namespace OnlineStore.Controllers
             }
             catch (Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("getHtml" + ex.Message);
                 return null;
             }
         }
@@ -410,7 +410,7 @@ namespace OnlineStore.Controllers
             }
             catch(Exception ex)
             {
-                utls.Log(ex.Message);
+                utls.Log("GenerateOrderPdf" + ex.Message);
                 return new MemoryStream();
             }
             finally { }
